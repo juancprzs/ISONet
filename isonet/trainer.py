@@ -6,7 +6,7 @@ from isonet.utils.config import C
 from isonet.utils.lips_utils import resnet18_lipschitz, isonet18_lipschitz
 # Import models
 from isonet.models.isonet import ISONet
-from isonet.models.resnet import ResNet18
+from isonet.models.resnet import ResNet
 # For adversary
 from autoattack import AutoAttack
 from torchvision.datasets import CIFAR10
@@ -126,9 +126,9 @@ class Trainer(object):
 
     def get_lipschitz_const(self):
         pdb.set_trace()
-        if isinstance(self.model, ISONet):
+        if isinstance(self.model.module, ISONet):
             fun = isonet18_lipschitz
-        elif isinstance(self.model, ResNet18):
+        elif isinstance(self.model.module, ResNet18):
             fun = resnet18_lipschitz
         else:
             raise ValueError('"model" should be either an ISONet or a ResNet18')
