@@ -266,7 +266,7 @@ class ISONet(nn.Module):
         super(ISONet, self).__init__()
         # define network structures
         if 'CIFAR' in C.DATASET.NAME:
-            self._construct_imagenet_basic()# self._construct_cifar()
+            self._construct_imagenet_basic() # self._construct_cifar()
         elif C.ISON.TRANS_FUN == 'basic_transform':
             self._construct_imagenet_basic()
         elif C.ISON.TRANS_FUN == 'bottleneck_transform':
