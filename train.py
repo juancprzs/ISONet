@@ -11,6 +11,7 @@ import isonet.utils.optim as ou
 import isonet.utils.logger as lu
 
 from isonet.models import *
+from isonet.models.resnet import ResNet18
 from isonet.trainer import Trainer
 
 
@@ -20,6 +21,7 @@ def arg_parse():
     parser.add_argument('--output', default='default', type=str)
     parser.add_argument('--gpus', type=str)
     parser.add_argument('--resume', default='', type=str)
+    parser.add_argument('--arch', default='iso', type=str, choices=['iso', 'res'])
     args = parser.parse_args()
     return args
 
@@ -48,7 +50,7 @@ def main():
     # ---- setup dataset ----
     train_loader, val_loader = du.construct_dataset()
 
-    net = ISONet()
+    net = ISONet() if args.arch == 'iso' else ResNet18()
     net.to(torch.device('cuda'))
     net = torch.nn.DataParallel(
         net, device_ids=list(range(args.gpus.count(',') + 1))

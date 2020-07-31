@@ -3,6 +3,15 @@ import torch
 import torch.nn as nn
 from isonet.utils.misc import tprint, pprint_without_newline
 from isonet.utils.config import C
+from isonet.utils.lips_utils import resnet18_lipschitz, isonet18_lipschitz
+# Import models
+from isonet.models.isonet import ISONet
+from isonet.models.resnet import ResNet18
+# For adversary
+from autoattack import AutoAttack
+from torchvision.datasets import CIFAR10
+from torchvision.transforms import Compose, ToTensor
+from torch.utils.data import DataLoader
 
 
 class Trainer(object):
@@ -27,6 +36,14 @@ class Trainer(object):
         # others
         self.ave_time = 0
         self.logger = logger
+        # For the adversary. NOTE: mean and std are HARDCODED for CIFAR
+        self.adv_val_set = CIFAR10(root=C.DATASET.ROOT, train=False, 
+            transform=Compose([ToTensor(),])) # leave between 0 and 1
+        self.adv_val_loader = DataLoader(self.adv_val_set, 
+            batch_size=self.val_loader.batch_size, num_workers=1)
+        self.mean = torch.tensor([0.4914, 0.4822, 0.4465]).view(1,3,1,1).to(device)
+        self.std = torch.tensor([0.2023, 0.1994, 0.2010]).view(1,3,1,1).to(device)
+
 
     def train(self):
         while self.epochs <= C.SOLVER.MAX_EPOCHS:
@@ -91,13 +108,64 @@ class Trainer(object):
             self.snapshot('best')
         self.snapshot('latest')
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
+        # Lipschitz constant and robust accuracy
+        lips_const = self.get_lipschitz_const()
+        cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
+        rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
+        assert nat_acc == correct / total
         info_str = f'valid | Acc: {100. * correct / total:.3f} | ' \
                    f'CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
                    f'O: {self.ortho_loss / len(self.val_loader):.3f} | ' \
-                   f'best: {self.best_valid_acc:.3f} | '
+                   f'best: {self.best_valid_acc:.3f} | ' \
+                   f'Lipschitz: {lips_const:5.3E} | ' \
+                   f'Rob. acc: {100. * rob_acc:.3f}' 
         print(info_str)
         self.logger.info(info_str)
         self.val_acc.append(100. * correct / total)
+
+    def get_lipschitz_const(self):
+        if isinstance(self.model, ISONet):
+            fun = isonet18_lipschitz
+        elif isinstance(self.model, ResNet18):
+            fun = resnet18_lipschitz
+        else:
+            raise ValueError('"model" should be either an ISONet or a ResNet18')
+            
+        return fun(self.model, [3, 32, 32])
+
+    def get_rob_acc(self, cheap=False):
+        class ModelWrapper(nn.Module):
+            def __init__(self, model, mean, std):
+                super(ModelWrapper, self).__init__()
+                self.model, self.mean, self.std = model, mean, std
+            def forward(self, x):
+                return self.model((x - self.mean) / self.std)
+
+        model_wrapper = ModelWrapper(self.model, self.mean, self.std)
+        adversary = AutoAttack(model_wrapper.forward, norm='Linf', 
+            eps=8./255., plus=False, verbose=False)
+        if cheap: # run cheap version of the attack
+            print('Running CHEAP adversarial attack')
+            adversary.cheap()
+        else:
+            print('Running EXPENSIVE adversarial attack')
+        # run actual attack
+        correct, total = 0, 0
+        with torch.no_grad():
+            for X, y in self.adv_val_loader:
+                X, y = X.to(self.device), y.to(self.device)
+                total += y.size(0)
+                # normal eval
+                _, predicted = self.model(X).max(1)
+                correct += predicted.eq(y).sum().item()
+                # adversarial eval
+                x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
+                _, adv_predicted = self.model(x_adv).max(1)
+                adv_correct += adv_predicted.eq(y).sum().item()
+
+        rob_acc = adv_correct / total
+        nat_acc = correct / total
+        return rob_acc, nat_acc
 
     def loss(self, outputs, targets):
         loss = self.criterion(outputs, targets)
