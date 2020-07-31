@@ -163,13 +163,13 @@ class Trainer(object):
                 X, y = X.to(self.device), y.to(self.device)
                 total += y.size(0)
                 # normal eval
-                _, predicted = self.model(X).max(1)
+                _, predicted = model_wrapper(X).max(1)
                 correct += predicted.eq(y).sum().item()
                 # adversarial eval
                 if cheap: # run cheap version of the attack
                     adversary.cheap()
                 x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
-                _, adv_predicted = self.model(x_adv).max(1)
+                _, adv_predicted = model_wrapper(x_adv).max(1)
                 adv_correct += adv_predicted.eq(y).sum().item()
                 if idx % 10 == 0:
                     rob_acc, nat_acc = 100.*adv_correct/total, 100.*correct/total
