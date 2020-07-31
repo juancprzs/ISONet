@@ -41,6 +41,7 @@ def main():
     C.SOLVER.TEST_BATCH_SIZE *= num_gpus
     C.SOLVER.BASE_LR *= num_gpus
     C.freeze()
+    print('C.ISON.TRANS_FUN: ', C.ISON.TRANS_FUN)
     # ---- setup logger and output ----
     output_dir = os.path.join(C.OUTPUT_DIR, C.DATASET.NAME, args.output)
     os.makedirs(output_dir, exist_ok=True)
