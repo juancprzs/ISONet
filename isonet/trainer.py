@@ -112,9 +112,12 @@ class Trainer(object):
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
         # Lipschitz constant and robust accuracy
         lips_const = self.get_lipschitz_const()
-        cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
-        rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
-        assert nat_acc == correct / total
+        if False:
+            cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
+            rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
+            assert nat_acc == correct / total
+        else:
+            rob_acc = 0.0
         info_str = f'valid | Acc: {100. * correct / total:.3f} | ' \
                    f'CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
                    f'O: {self.ortho_loss / len(self.val_loader):.3f} | ' \
