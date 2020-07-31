@@ -128,12 +128,12 @@ class Trainer(object):
         pdb.set_trace()
         if isinstance(self.model.module, ISONet):
             fun = isonet18_lipschitz
-        elif isinstance(self.model.module, ResNet18):
+        elif isinstance(self.model.module, ResNet):
             fun = resnet18_lipschitz
         else:
             raise ValueError('"model" should be either an ISONet or a ResNet18')
             
-        return fun(self.model, [3, 32, 32])
+        return fun(self.model.module, [3, 32, 32])
 
     def get_rob_acc(self, cheap=False):
         class ModelWrapper(nn.Module):
