@@ -151,7 +151,7 @@ class Trainer(object):
         else:
             print('Running EXPENSIVE adversarial attack')
         # run actual attack
-        correct, total = 0, 0
+        correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
             for X, y in self.adv_val_loader:
                 X, y = X.to(self.device), y.to(self.device)
