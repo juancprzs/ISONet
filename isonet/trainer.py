@@ -12,6 +12,7 @@ from autoattack import AutoAttack
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import Compose, ToTensor
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 import pdb
 
 
@@ -153,7 +154,7 @@ class Trainer(object):
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
-            for X, y in self.adv_val_loader:
+            for X, y in tqdm(self.adv_val_loader):
                 X, y = X.to(self.device), y.to(self.device)
                 total += y.size(0)
                 # normal eval
