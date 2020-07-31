@@ -12,6 +12,7 @@ from autoattack import AutoAttack
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import Compose, ToTensor
 from torch.utils.data import DataLoader
+import pdb
 
 
 class Trainer(object):
@@ -124,6 +125,7 @@ class Trainer(object):
         self.val_acc.append(100. * correct / total)
 
     def get_lipschitz_const(self):
+        pdb.set_trace()
         if isinstance(self.model, ISONet):
             fun = isonet18_lipschitz
         elif isinstance(self.model, ResNet18):
