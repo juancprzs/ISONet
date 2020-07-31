@@ -144,7 +144,7 @@ class Trainer(object):
             def forward(self, x):
                 return self.model((x - self.mean) / self.std)
 
-        model_wrapper = ModelWrapper(self.model, self.mean, self.std)
+        model_wrapper = ModelWrapper(self.model.module, self.mean, self.std)
         adversary = AutoAttack(model_wrapper.forward, norm='Linf', 
             eps=8./255., plus=False, verbose=False)
         if cheap:
