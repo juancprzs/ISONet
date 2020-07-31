@@ -268,10 +268,8 @@ class ISONet(nn.Module):
         if 'CIFAR' in C.DATASET.NAME:
             self._construct_imagenet_basic()# self._construct_cifar()
         elif C.ISON.TRANS_FUN == 'basic_transform':
-            print('Constructing Basic ISONet for ImageNet')
             self._construct_imagenet_basic()
         elif C.ISON.TRANS_FUN == 'bottleneck_transform':
-            print('Constructing ISONet for ImageNet')
             self._construct_imagenet()
         else:
             raise NotImplementedError
