@@ -146,11 +146,8 @@ class Trainer(object):
         model_wrapper = ModelWrapper(self.model, self.mean, self.std)
         adversary = AutoAttack(model_wrapper.forward, norm='Linf', 
             eps=8./255., plus=False, verbose=False)
-        if cheap: # run cheap version of the attack
-            print('Running CHEAP adversarial attack')
-            adversary.cheap()
-        else:
-            print('Running EXPENSIVE adversarial attack')
+        atck_cost = 'CHEAP' if cheap else 'EXPENSIVE'
+        print(f'Running {atck_cost} adversarial attack')
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
@@ -161,6 +158,8 @@ class Trainer(object):
                 _, predicted = self.model(X).max(1)
                 correct += predicted.eq(y).sum().item()
                 # adversarial eval
+                if cheap: # run cheap version of the attack
+                    adversary.cheap()
                 x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
                 _, adv_predicted = self.model(x_adv).max(1)
                 adv_correct += adv_predicted.eq(y).sum().item()
