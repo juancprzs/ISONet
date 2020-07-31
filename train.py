@@ -14,6 +14,8 @@ from isonet.models import *
 from isonet.models.resnet import ResNet18
 from isonet.trainer import Trainer
 
+import numpy as np
+import random
 
 def arg_parse():
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -22,12 +24,19 @@ def arg_parse():
     parser.add_argument('--gpus', type=str)
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--arch', default='iso', type=str, choices=['iso', 'res'])
+    parser.add_argument('--seed', default=111, type=int)
     args = parser.parse_args()
     return args
 
 
 def main():
     args = arg_parse()
+    # ---- reproducibility ----
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available() == 'cuda':
+        torch.cuda.manual_seed_all(args.seed)
     # disable imagenet dataset jpeg warnings
     warnings.filterwarnings("ignore", "(Possibly )?corrupt EXIF data", UserWarning)
     # ---- setup GPUs ----
@@ -41,7 +50,6 @@ def main():
     C.SOLVER.TEST_BATCH_SIZE *= num_gpus
     C.SOLVER.BASE_LR *= num_gpus
     C.freeze()
-    print('C.ISON.TRANS_FUN: ', C.ISON.TRANS_FUN)
     # ---- setup logger and output ----
     output_dir = os.path.join(C.OUTPUT_DIR, C.DATASET.NAME, args.output)
     os.makedirs(output_dir, exist_ok=True)
