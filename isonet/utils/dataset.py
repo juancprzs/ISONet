@@ -32,11 +32,11 @@ def construct_dataset():
     }
 
     if C.DATASET.NAME == 'CIFAR10':
-        train_set = torchvision.datasets.CIFAR10(root=C.DATASET.ROOT, train=True, transform=transform['cifar_train'])
-        val_set = torchvision.datasets.CIFAR10(root=C.DATASET.ROOT, train=False, transform=transform['cifar_test'])
+        train_set = torchvision.datasets.CIFAR10(root=C.DATASET.ROOT, train=True, transform=transform['cifar_train'], download=True)
+        val_set = torchvision.datasets.CIFAR10(root=C.DATASET.ROOT, train=False, transform=transform['cifar_test'], download=True)
     elif C.DATASET.NAME == 'CIFAR100':
-        train_set = torchvision.datasets.CIFAR100(root=C.DATASET.ROOT, train=True, transform=transform['cifar_train'])
-        val_set = torchvision.datasets.CIFAR100(root=C.DATASET.ROOT, train=False, transform=transform['cifar_test'])
+        train_set = torchvision.datasets.CIFAR100(root=C.DATASET.ROOT, train=True, transform=transform['cifar_train'], download=True)
+        val_set = torchvision.datasets.CIFAR100(root=C.DATASET.ROOT, train=False, transform=transform['cifar_test'], download=True)
     elif C.DATASET.NAME == 'ILSVRC2012':
         train_dir = os.path.join(C.DATASET.ROOT, 'ILSVRC2012', 'train')
         val_dir = os.path.join(C.DATASET.ROOT, 'ILSVRC2012', 'val')
