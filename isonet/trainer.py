@@ -125,7 +125,6 @@ class Trainer(object):
         self.val_acc.append(100. * correct / total)
 
     def get_lipschitz_const(self):
-        pdb.set_trace()
         if isinstance(self.model.module, ISONet):
             fun = isonet18_lipschitz
         elif isinstance(self.model.module, ResNet):
