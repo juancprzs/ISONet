@@ -151,7 +151,8 @@ class Trainer(object):
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
-            for X, y in tqdm(self.adv_val_loader):
+            pbar = tqdm(self.adv_val_loader)
+            for idx, (X, y) in enumerate(pbar):
                 X, y = X.to(self.device), y.to(self.device)
                 total += y.size(0)
                 # normal eval
@@ -163,9 +164,12 @@ class Trainer(object):
                 x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
                 _, adv_predicted = self.model(x_adv).max(1)
                 adv_correct += adv_predicted.eq(y).sum().item()
+                if idx % 10 == 0:
+                    rob_acc, nat_acc = 100.*adv_correct/total, 100.*correct/total
+                    info = f'Rob acc: {rob_acc:.3f} | Nat acc: {nat_acc:.3f}'
+                    pbar.set_description(info)
 
-        rob_acc = adv_correct / total
-        nat_acc = correct / total
+        rob_acc, nat_acc = adv_correct / total, correct / total
         return rob_acc, nat_acc
 
     def loss(self, outputs, targets):
