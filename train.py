@@ -23,8 +23,11 @@ def arg_parse():
     parser.add_argument('--output', default='default', type=str)
     parser.add_argument('--gpus', type=str)
     parser.add_argument('--resume', default='', type=str)
-    parser.add_argument('--arch', default='iso', type=str, choices=['iso', 'res'])
+    parser.add_argument('--arch', default='iso', type=str, 
+        choices=['iso', 'res'])
     parser.add_argument('--seed', default=111, type=int)
+    parser.add_argument('--size', default='large', type=str, 
+        choices=['small','large'])
     args = parser.parse_args()
     return args
 
@@ -59,7 +62,7 @@ def main():
     # ---- setup dataset ----
     train_loader, val_loader = du.construct_dataset()
 
-    net = ISONet() if args.arch == 'iso' else ResNet18()
+    net = ISONet(size=args.size) if args.arch == 'iso' else ResNet18()
     net.to(torch.device('cuda'))
     net = torch.nn.DataParallel(
         net, device_ids=list(range(args.gpus.count(',') + 1))

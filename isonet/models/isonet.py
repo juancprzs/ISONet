@@ -262,11 +262,14 @@ class ResStem(nn.Module):
 class ISONet(nn.Module):
     """ResNet model."""
 
-    def __init__(self):
+    def __init__(self, size='large'):
         super(ISONet, self).__init__()
         # define network structures
         if 'CIFAR' in C.DATASET.NAME:
-            self._construct_imagenet_basic() # self._construct_cifar()
+            if size == 'small':
+                self._construct_cifar()
+            elif size == 'large':
+                self._construct_imagenet_basic() 
         elif C.ISON.TRANS_FUN == 'basic_transform':
             self._construct_imagenet_basic()
         elif C.ISON.TRANS_FUN == 'bottleneck_transform':

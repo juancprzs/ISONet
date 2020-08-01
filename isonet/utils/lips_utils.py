@@ -130,8 +130,11 @@ def resnet18_lipschitz(model, input_shape):
     layers['layer3.basic_block1']   = list(model.layer3.named_children())[0][1]
     layers['layer3.basic_block2']   = list(model.layer3.named_children())[1][1]
     # Layer 4
-    layers['layer4.basic_block1']   = list(model.layer4.named_children())[0][1]
-    layers['layer4.basic_block2']   = list(model.layer4.named_children())[1][1]
+    try:
+        layers['layer4.basic_block1']   = list(model.layer4.named_children())[0][1]
+        layers['layer4.basic_block2']   = list(model.layer4.named_children())[1][1]
+    except:
+        print('layer 4 not found')
     # Linear
     layers['linear']                = model.linear
 
