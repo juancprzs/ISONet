@@ -266,6 +266,7 @@ class ISONet(nn.Module):
         super(ISONet, self).__init__()
         # define network structures
         if 'CIFAR' in C.DATASET.NAME:
+            print(f'Using {size.upper()} ISONet')
             if size == 'small':
                 self._construct_cifar()
             elif size == 'large':
