@@ -280,8 +280,8 @@ class ISONet(nn.Module):
         self._network_init()
 
     def _construct_cifar(self):
-        assert (C.ISON.DEPTH - 2) % 6 == 0, \
-            'Model depth should be of the format 6n + 2 for cifar'
+        # assert (C.ISON.DEPTH - 2) % 6 == 0, \
+        #     'Model depth should be of the format 6n + 2 for cifar'
         # Each stage has the same number of blocks for cifar
         d = int((C.ISON.DEPTH - 2) / 6)
         # Stem: (N, 3, 32, 32) -> (N, 16, 32, 32)
