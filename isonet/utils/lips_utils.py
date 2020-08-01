@@ -130,11 +130,8 @@ def resnet18_lipschitz(model, input_shape):
     layers['layer3.basic_block1']   = list(model.layer3.named_children())[0][1]
     layers['layer3.basic_block2']   = list(model.layer3.named_children())[1][1]
     # Layer 4
-    try:
-        layers['layer4.basic_block1']   = list(model.layer4.named_children())[0][1]
-        layers['layer4.basic_block2']   = list(model.layer4.named_children())[1][1]
-    except:
-        print('layer 4 not found')
+    layers['layer4.basic_block1']   = list(model.layer4.named_children())[0][1]
+    layers['layer4.basic_block2']   = list(model.layer4.named_children())[1][1]
     # Linear
     layers['linear']                = model.linear
 
@@ -192,8 +189,11 @@ def isonet18_lipschitz(model, input_shape):
     layers['stage3.block1'] = model.s3.b1
     layers['stage3.block2'] = model.s3.b2
     # Stage 4
-    layers['stage4.block1'] = model.s4.b1
-    layers['stage4.block2'] = model.s4.b2
+    try:
+        layers['stage4.block1'] = model.s4.b1
+        layers['stage4.block2'] = model.s4.b2
+    except:
+        print('layer 4 not found')
     # Linear. The head has avgpool, dropout and fc
     layers['avg_pool']      = model.head.avg_pool
     layers['linear']        = model.head.fc
