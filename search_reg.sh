@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH --partition=batch
-#SBATCH --array=[1-16]
-#SBATCH -J ison_search_reg
-#SBATCH -o logs/ison_search_reg.%J.out
-#SBATCH -e logs/ison_search_reg.%J.err
+#SBATCH --array=[6-16]
+#SBATCH -J final_S_iso
+#SBATCH -o logs/final_S_iso.%J.out
+#SBATCH -e logs/final_S_iso.%J.err
 #SBATCH --time=10:00:00
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:v100:1
