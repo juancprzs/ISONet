@@ -175,7 +175,7 @@ def resnet18_lipschitz(model, input_shape):
     return tot_lipschitz
 
 
-def isonet18_lipschitz(model, input_shape):
+def isonet18_lipschitz(model, input_shape, with_linear=False, with_pool=True):
     # Starting
     layers = OrderedDict()
     layers['stem']          = model.stem.conv # stem has conv, relu and maxpool
@@ -195,8 +195,10 @@ def isonet18_lipschitz(model, input_shape):
     except:
         print('layer 4 not found')
     # Linear. The head has avgpool, dropout and fc
-    layers['avg_pool']      = model.head.avg_pool
-    layers['linear']        = model.head.fc
+    if with_pool:
+        layers['avg_pool'] = model.head.avg_pool
+    if with_linear:
+        layers['linear'] = model.head.fc
 
     lips_constants = OrderedDict()
     shape = input_shape

@@ -111,7 +111,7 @@ class Trainer(object):
         self.snapshot('latest')
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
         # Lipschitz constant and robust accuracy
-        lips_const = self.get_lipschitz_const()
+        lip_with_pool, lip_no_pool = self.get_lipschitz_const()
         if False:
             cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
             rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
@@ -122,7 +122,8 @@ class Trainer(object):
                    f'CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
                    f'O: {self.ortho_loss / len(self.val_loader):.3f} | ' \
                    f'best: {self.best_valid_acc:.3f} | ' \
-                   f'Lipschitz: {lips_const:5.3E} | ' \
+                   f'L w. pool: {lip_with_pool:5.3E} | ' \
+                   f'L no pool: {lip_no_pool:5.3E} | ' \
                    f'Rob. acc: {100. * rob_acc:.3f}' 
         print(info_str)
         self.logger.info(info_str)
@@ -135,8 +136,9 @@ class Trainer(object):
             fun = resnet18_lipschitz
         else:
             raise ValueError('"model" should be either an ISONet or a ResNet18')
-            
-        return fun(self.model.module, [3, 32, 32])
+        lip_with_pool = fun(self.model.module, [3, 32, 32], with_pool=True)
+        lip_no_pool = fun(self.model.module, [3, 32, 32], with_pool=False)
+        return lip_with_pool, lip_no_pool
 
     def get_rob_acc(self, cheap=False):
         class ModelWrapper(nn.Module):
