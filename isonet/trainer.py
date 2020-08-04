@@ -109,6 +109,7 @@ class Trainer(object):
         if 100. * correct / total > self.best_valid_acc:
             self.snapshot('best')
         self.snapshot('latest')
+        self.snapshot(None) # save ALL snapshots
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
         # Lipschitz constant and robust accuracy
         lip_with_pool, lip_no_pool = self.get_lipschitz_const()
