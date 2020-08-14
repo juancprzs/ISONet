@@ -186,14 +186,17 @@ def isonet18_lipschitz(model, input_shape, with_linear=False, with_pool=True):
     layers['stage2.block1'] = model.s2.b1
     layers['stage2.block2'] = model.s2.b2
     # Stage 3
-    layers['stage3.block1'] = model.s3.b1
-    layers['stage3.block2'] = model.s3.b2
-    # Stage 4
     try:
-        layers['stage4.block1'] = model.s4.b1
-        layers['stage4.block2'] = model.s4.b2
+        layers['stage3.block1'] = model.s3.b1
+        layers['stage3.block2'] = model.s3.b2
+        # Stage 4
+        try:
+            layers['stage4.block1'] = model.s4.b1
+            layers['stage4.block2'] = model.s4.b2
+        except:
+            print('layer 4 not found')
     except:
-        print('layer 4 not found')
+        print('layer 3 not found')
     # Linear. The head has avgpool, dropout and fc
     if with_pool:
         layers['avg_pool'] = model.head.avg_pool

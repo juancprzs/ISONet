@@ -292,9 +292,9 @@ class ISONet(nn.Module):
         # Stage 2: (N, 16, 32, 32) -> (N, 32, 16, 16)
         self.s2 = ResStage(w_in=16, w_out=32, stride=2, d=d)
         # Stage 3: (N, 32, 16, 16) -> (N, 64, 8, 8)
-        self.s3 = ResStage(w_in=32, w_out=64, stride=2, d=d)
+        # self.s3 = ResStage(w_in=32, w_out=64, stride=2, d=d)
         # Head: (N, 64, 8, 8) -> (N, num_classes)
-        self.head = ResHead(w_in=64, nc=C.DATASET.NUM_CLASSES)
+        self.head = ResHead(w_in=32, nc=C.DATASET.NUM_CLASSES)
 
     def _construct_imagenet_basic(self):
         # Retrieve the number of blocks per stage
