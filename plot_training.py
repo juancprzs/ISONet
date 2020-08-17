@@ -38,11 +38,11 @@ orth = np.array([float(x.split('|')[3].split(':')[1].strip()) for x in lines])
 # Lipschitz constants
 lips = np.array([float(x.split('|')[5].split(':')[1].strip()) for x in lines])
 if 'nostd_' in args.exp:
-    print('Not using standardization. Lipschitz const will not be scaled')
+    print('Not using standardization. Lipschitz const WILL NOT BE SCALED')
 else:
     stds = (0.2023, 0.1994, 0.2010)
     scale = min(stds)
-    print(f'Using standardization. Lipschitz const is multiplied by 1/{scale}')
+    print(f'Using standardization. Lipschitz const WILL BE SCALED by 1/{scale}')
     lips = lips / scale
 # plot stuff
 axes[0,0].plot(accs, label=f'coeff={coeff:2.1E}')
