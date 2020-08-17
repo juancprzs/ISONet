@@ -37,7 +37,7 @@ xent = np.array([float(x.split('|')[2].split(':')[1].strip()) for x in lines])
 orth = np.array([float(x.split('|')[3].split(':')[1].strip()) for x in lines])
 # Lipschitz constants
 lips = np.array([float(x.split('|')[5].split(':')[1].strip()) for x in lines])
-if 'no_std' in args.exp:
+if 'nostd_' in args.exp:
     print('Not using standardization. Lipschitz const will not be scaled')
 else:
     stds = (0.2023, 0.1994, 0.2010)
