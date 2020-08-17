@@ -8,11 +8,8 @@ parser = argparse.ArgumentParser(description='Plot results for ISONet')
 parser.add_argument('--exp', default='exp', help='experiment name')
 args = parser.parse_args()
 
-args.exp = 'isoS_exp'
-
 pattern = f'outputs/cls/CIFAR10/{args.exp}*/*.txt'
-key = lambda x: int(x.split('/')[-2].split('exp')[-1])
-f = sorted(glob(pattern), key=key)
+f = sorted(glob(pattern))[0]
 
 print(f'File "{f}" will be read')
 
