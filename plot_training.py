@@ -72,7 +72,7 @@ axes[1,1].grid()
 
 # save figure
 plt.tight_layout()
-fig_name = f'results_fig_{args.exp}.png'
+fig_name = f'results_fig.png'
 print(f'Saving fig for exps "{args.exp}" at {fig_name}', end=' ', flush=True)
 plt.savefig(fig_name, dpi=200)
 print('done.')
