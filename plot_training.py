@@ -5,8 +5,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='Plot results for ISONet')
-parser.add_argument('--exp', default='exp', help='pattern for experiment names', 
-    type=str, choices=['exp','isoS_exp'])
+parser.add_argument('--exp', default='exp', help='experiment name')
 args = parser.parse_args()
 
 args.exp = 'isoS_exp'
