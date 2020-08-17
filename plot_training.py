@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 from glob import glob
+import os.path as osp
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -72,7 +73,8 @@ axes[1,1].grid()
 
 # save figure
 plt.tight_layout()
-fig_name = f'results_fig.png'
-print(f'Saving fig for exps "{args.exp}" at {fig_name}', end=' ', flush=True)
+basename = osp.basename(f)
+fig_name = f.replace(basename, 'results_fig.png')
+print(f'Saving fig for exp "{args.exp}" at {fig_name}', end=' ', flush=True)
 plt.savefig(fig_name, dpi=200)
 print('done.')
