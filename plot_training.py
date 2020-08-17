@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Plot results for ISONet')
 parser.add_argument('--exp', default='exp', help='experiment name')
 args = parser.parse_args()
 
-pattern = f'outputs/cls/CIFAR10/{args.exp}*/*.txt'
+pattern = f'outputs/cls/CIFAR10/{args.exp}/*.txt'
 f = sorted(glob(pattern))[0]
 
 print(f'File "{f}" will be read')
@@ -37,7 +37,9 @@ xent = np.array([float(x.split('|')[2].split(':')[1].strip()) for x in lines])
 orth = np.array([float(x.split('|')[3].split(':')[1].strip()) for x in lines])
 # Lipschitz constants
 lips = np.array([float(x.split('|')[5].split(':')[1].strip()) for x in lines])
-if 'no_std' not in args.exp:
+if 'no_std' in args.exp:
+    print('Not using standardization. Lipschitz const will not be scaled')
+else:
     stds = (0.2023, 0.1994, 0.2010)
     scale = min(stds)
     print(f'Using standardization. Lipschitz const is multiplied by 1/{scale}')
