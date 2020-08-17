@@ -74,7 +74,6 @@ axes[1,1].grid()
 # save figure
 plt.tight_layout()
 basename = osp.basename(f)
-import pdb; pdb.set_trace()
 fig_name = f.replace(basename, 'results_fig.png')
 print(f'Saving fig for exp "{args.exp}" at {fig_name}', end=' ', flush=True)
 plt.savefig(fig_name, dpi=200)
