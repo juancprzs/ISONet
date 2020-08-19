@@ -82,10 +82,10 @@ def main():
 
     net = ISONet(size=args.size) if args.arch == 'iso' else ResNet18()
     net.to(torch.device('cuda'))
-    net = ModelWrapper(net, normalize=C.DATASET.NORMALIZE)
     net = torch.nn.DataParallel(
         net, device_ids=list(range(args.gpus.count(',') + 1))
     )
+    net = ModelWrapper(net, normalize=C.DATASET.NORMALIZE)
     optim = ou.construct_optim(net, num_gpus)
 
     trainer = Trainer(
