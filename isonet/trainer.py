@@ -133,14 +133,8 @@ class Trainer(object):
         self.val_acc.append(100. * correct / total)
 
     def get_lipschitz_const(self):
-        if isinstance(self.model.module, ISONet):
-            fun = isonet18_lipschitz
-        elif isinstance(self.model.module, ResNet):
-            fun = resnet18_lipschitz
-        else:
-            raise ValueError('"model" should be either an ISONet or a ResNet18')
-        lip_with_pool = fun(self.model.module, [3, 32, 32], with_pool=True)
-        lip_no_pool = fun(self.model.module, [3, 32, 32], with_pool=False)
+        lip_with_pool = isonet18_lipschitz(self.model.model.module, [3, 32, 32], with_pool=True)
+        lip_no_pool = isonet18_lipschitz(self.model.model.module, [3, 32, 32], with_pool=False)
         return lip_with_pool, lip_no_pool
 
     def get_rob_acc(self, cheap=False):
