@@ -2,6 +2,8 @@ import os
 import argparse
 import warnings
 
+import torch
+import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
 from isonet.utils.config import C
@@ -31,6 +33,22 @@ def arg_parse():
     args = parser.parse_args()
     return args
 
+
+class ModelWrapper(nn.Module):
+    def __init__(self, model, normalize=True):
+        super(ModelWrapper, self).__init__()
+        self.model = model
+        # # standardization params (hardcoded for CIFAR)
+        # mean
+        self.mean = [0.4914, 0.4822, 0.4465]
+        self.mean = torch.tensor(self.mean).view(1, 3, 1, 1).to('cuda')
+        # std
+        self.std = [0.2023, 0.1994, 0.2010] if normalize else [1.0, 1.0, 1.0]
+        self.std = torch.tensor(self.std).view(1, 3, 1, 1).to('cuda')
+
+    def forward(self, x):
+        x = (x - self.mean) / self.std # normalize
+        return self.model(x)
 
 def main():
     args = arg_parse()
@@ -64,6 +82,7 @@ def main():
 
     net = ISONet(size=args.size) if args.arch == 'iso' else ResNet18()
     net.to(torch.device('cuda'))
+    net = ModelWrapper(net, normalize=C.DATASET.NORMALIZE)
     net = torch.nn.DataParallel(
         net, device_ids=list(range(args.gpus.count(',') + 1))
     )
@@ -77,6 +96,7 @@ def main():
         optim,
         logger,
         output_dir,
+        trades=C.SOLVER.TRADES
     )
 
     if args.resume:

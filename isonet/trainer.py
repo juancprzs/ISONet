@@ -4,6 +4,7 @@ import torch.nn as nn
 from isonet.utils.misc import tprint, pprint_without_newline
 from isonet.utils.config import C
 from isonet.utils.lips_utils import resnet18_lipschitz, isonet18_lipschitz
+from isonet.utils.trades_utils import trades_loss
 # Import models
 from isonet.models.isonet import ISONet
 from isonet.models.resnet import ResNet
@@ -17,7 +18,8 @@ import pdb
 
 
 class Trainer(object):
-    def __init__(self, device, train_loader, val_loader, model, optim, logger, output_dir):
+    def __init__(self, device, train_loader, val_loader, model, optim, logger, 
+            output_dir, trades=False):
         # misc
         self.device = device
         self.output_dir = output_dir
@@ -38,13 +40,7 @@ class Trainer(object):
         # others
         self.ave_time = 0
         self.logger = logger
-        # For the adversary. NOTE: mean and std are HARDCODED for CIFAR
-        self.adv_val_set = CIFAR10(root=C.DATASET.ROOT, train=False, 
-            transform=Compose([ToTensor(),])) # leave between 0 and 1
-        self.adv_val_loader = DataLoader(self.adv_val_set, 
-            batch_size=self.val_loader.batch_size, num_workers=1)
-        self.mean = torch.tensor([0.4914, 0.4822, 0.4465]).view(1,3,1,1).to(device)
-        self.std = torch.tensor([0.2023, 0.1994, 0.2010]).view(1,3,1,1).to(device)
+        self.trades = trades # conduct TRADES adversarial training
 
 
     def train(self):
@@ -68,8 +64,16 @@ class Trainer(object):
             self.optim.zero_grad()
             batch_size = inputs.shape[0]
 
-            outputs = self.model(inputs)
-            loss = self.loss(outputs, targets)
+            if self.trades:
+                # default parameters taken from
+                # https://github.com/yaodongyu/TRADES/blob/master/train_trades_cifar10.py#L30
+                loss = trades_loss(
+                    self.model, inputs, targets, self.optim, step_size=0.007, 
+                    epsilon=0.031, perturb_steps=10, beta=6.0, distance='l_inf'
+                )
+            else:
+                outputs = self.model(inputs)
+                loss = self.loss(outputs, targets)
             loss.backward()
             self.optim.step()
 
@@ -113,12 +117,10 @@ class Trainer(object):
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
         # Lipschitz constant and robust accuracy
         lip_with_pool, lip_no_pool = self.get_lipschitz_const()
-        if False:
-            cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
-            rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
-            assert nat_acc == correct / total
-        else:
-            rob_acc = 0.0
+        cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
+        rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
+        assert nat_acc == correct / total
+
         info_str = f'valid | Acc: {100. * correct / total:.3f} | ' \
                    f'CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
                    f'O: {self.ortho_loss / len(self.val_loader):.3f} | ' \
@@ -142,20 +144,12 @@ class Trainer(object):
         return lip_with_pool, lip_no_pool
 
     def get_rob_acc(self, cheap=False):
-        class ModelWrapper(nn.Module):
-            def __init__(self, model, mean, std):
-                super(ModelWrapper, self).__init__()
-                self.model, self.mean, self.std = model, mean, std
-            def forward(self, x):
-                return self.model((x - self.mean) / self.std)
-
-        model_wrapper = ModelWrapper(self.model, self.mean, self.std)
-        adversary = AutoAttack(model_wrapper.forward, norm='Linf', 
+        adversary = AutoAttack(self.model.forward, norm='Linf', 
             eps=8./255., plus=False, verbose=False)
         if cheap:
             print(f'Running CHEAP adversarial attack')
             adversary = AutoAttack(
-                model_wrapper.forward, norm='Linf', eps=8./255., plus=False, 
+                self.model.forward, norm='Linf', eps=8./255., plus=False, 
                 verbose=False, attacks_to_run=['apgd-ce']
             )
         else:
@@ -163,18 +157,18 @@ class Trainer(object):
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
-            pbar = tqdm(self.adv_val_loader)
+            pbar = tqdm(self.val_loader)
             for idx, (X, y) in enumerate(pbar):
                 X, y = X.to(self.device), y.to(self.device)
                 total += y.size(0)
                 # normal eval
-                _, predicted = model_wrapper(X).max(1)
+                _, predicted = self.model(X).max(1)
                 correct += predicted.eq(y).sum().item()
                 # adversarial eval
                 if cheap: # run cheap version of the attack
                     adversary.cheap()
                 x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
-                _, adv_predicted = model_wrapper(x_adv).max(1)
+                _, adv_predicted = self.model(x_adv).max(1)
                 adv_correct += adv_predicted.eq(y).sum().item()
                 if idx % 10 == 0:
                     rob_acc, nat_acc = 100.*adv_correct/total, 100.*correct/total
@@ -212,7 +206,7 @@ class Trainer(object):
 
     def snapshot(self, name=None):
         state = {
-            'net': self.model.state_dict(),
+            'net': self.model.model.state_dict(),
             'optim': self.optim.state_dict(),
             'epoch': self.epochs,
             'train_accuracy': self.train_acc,
