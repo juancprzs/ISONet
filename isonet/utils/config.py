@@ -15,6 +15,7 @@ C.DATASET.ROOT = './data/'
 C.DATASET.NAME = 'ILSVRC2012'
 C.DATASET.NUM_CLASSES = 1000
 C.DATASET.NUM_WORKERS = 8
+C.DATASET.NORMALIZE = True # modified
 
 # ---------------------------------------------------------------------------- #
 # Solver
@@ -36,6 +37,7 @@ C.SOLVER.MAX_EPOCHS = 100
 C.SOLVER.WARMUP = False
 C.SOLVER.WARMUP_EPOCH = 5
 C.SOLVER.WARMUP_FACTOR = 0.2
+C.SOLVER.TRADES = False # modified
 # ---------------------------------------------------------------------------- #
 # ISONet configs
 # ---------------------------------------------------------------------------- #
