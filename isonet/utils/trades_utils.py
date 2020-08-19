@@ -83,4 +83,4 @@ def trades_loss(model,
     loss_robust = (1.0 / batch_size) * criterion_kl(F.log_softmax(model(x_adv), dim=1),
                                                     F.softmax(model(x_natural), dim=1))
     loss = loss_natural + beta * loss_robust
-    return loss
+    return logits, loss

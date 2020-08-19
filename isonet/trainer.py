@@ -67,7 +67,7 @@ class Trainer(object):
             if self.trades:
                 # default parameters taken from
                 # https://github.com/yaodongyu/TRADES/blob/master/train_trades_cifar10.py#L30
-                loss = trades_loss(
+                outputs, loss = trades_loss(
                     self.model, inputs, targets, self.optim, step_size=0.007, 
                     epsilon=0.031, perturb_steps=10, beta=6.0, distance='l_inf'
                 )
