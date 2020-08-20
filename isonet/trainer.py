@@ -177,7 +177,7 @@ class Trainer(object):
         self.ce_loss += loss.item()
 
         if C.ISON.ORTHO_COEFF > 0:
-            o_loss = self.model.module.ortho()
+            o_loss = self.model.model.module.ortho()
             self.ortho_loss += o_loss.item()
             loss += o_loss * C.ISON.ORTHO_COEFF
         return loss
