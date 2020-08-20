@@ -25,17 +25,13 @@ def arg_parse():
     parser.add_argument('--output', default='default', type=str)
     parser.add_argument('--gpus', type=str)
     parser.add_argument('--resume', default='', type=str)
-    parser.add_argument('--arch', default='iso', type=str, 
-        choices=['iso', 'res'])
     parser.add_argument('--seed', default=111, type=int)
-    parser.add_argument('--size', default='large', type=str, 
-        choices=['small','large'])
     args = parser.parse_args()
     return args
 
 
 class ModelWrapper(nn.Module):
-    def __init__(self, model, normalize=True):
+    def __init__(self, model):
         super(ModelWrapper, self).__init__()
         self.model = model
         # # standardization params (hardcoded for CIFAR)
@@ -43,7 +39,7 @@ class ModelWrapper(nn.Module):
         self.mean = [0.4914, 0.4822, 0.4465]
         self.mean = torch.tensor(self.mean).view(1, 3, 1, 1).to('cuda')
         # std
-        self.std = [0.2023, 0.1994, 0.2010] if normalize else [1.0, 1.0, 1.0]
+        self.std = [0.2023, 0.1994, 0.2010]
         self.std = torch.tensor(self.std).view(1, 3, 1, 1).to('cuda')
 
     def forward(self, x):
@@ -80,23 +76,32 @@ def main():
     # ---- setup dataset ----
     train_loader, val_loader = du.construct_dataset()
 
-    net = ISONet(size=args.size) if args.arch == 'iso' else ResNet18()
-    net.to(torch.device('cuda'))
-    net = torch.nn.DataParallel(
-        net, device_ids=list(range(args.gpus.count(',') + 1))
+    # net1
+    net1 = ResNet18()
+    net1.to(torch.device('cuda'))
+    net1 = torch.nn.DataParallel(
+        net1, device_ids=list(range(args.gpus.count(',') + 1))
     )
-    net = ModelWrapper(net, normalize=C.DATASET.NORMALIZE)
-    optim = ou.construct_optim(net, num_gpus)
+    net1 = ModelWrapper(net1)
+    # net1
+    net2 = ResNet18()
+    net2.to(torch.device('cuda'))
+    net2 = torch.nn.DataParallel(
+        net2, device_ids=list(range(args.gpus.count(',') + 1))
+    )
+    net2 = ModelWrapper(net2)
+
+    optim = ou.construct_optim(net1, net2, num_gpus)
 
     trainer = Trainer(
         torch.device('cuda'),
         train_loader,
         val_loader,
-        net,
+        net1,
+        net2,
         optim,
         logger,
-        output_dir,
-        trades=C.SOLVER.TRADES
+        output_dir
     )
 
     if args.resume:

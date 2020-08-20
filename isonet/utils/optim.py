@@ -2,26 +2,24 @@ import torch.optim as optim
 from isonet.utils.config import C
 
 
-def construct_optim(net, num_gpus):
-    # SReLU parameters.
-    srelu_params = []
+def construct_optim(net1, net2, num_gpus):
     # channel-shared parameters.
     shared_params = []
     # Non-batchnorm parameters.
     other_params = []
-    for name, p in net.named_parameters():
-        if 'srelu' in name:
-            srelu_params.append(p)
-        elif 'shared' in name:
+    for name, p in net1.named_parameters():
+        if 'shared' in name:
+            shared_params.append(p)
+        else:
+            other_params.append(p)
+
+    for name, p in net2.named_parameters():
+        if 'shared' in name:
             shared_params.append(p)
         else:
             other_params.append(p)
 
     optim_params = [
-        {
-            'params': srelu_params,
-            'weight_decay': 0.0,
-        },
         {
             'params': other_params,
             'weight_decay': C.SOLVER.WEIGHT_DECAY,
@@ -33,10 +31,10 @@ def construct_optim(net, num_gpus):
         }
     ]
     # Check all parameters will be passed into optimizer.
-    assert len(list(net.parameters())) == len(other_params) + len(srelu_params) + len(shared_params), \
+    assert len(list(net1.parameters())) + len(list(net2.parameters())) == len(other_params) + len(shared_params), \
         f'parameter size does not match: ' \
-        f'{len(other_params)} + {len(srelu_params)} + {len(shared_params)} != ' \
-        f'{len(list(net.parameters()))}'
+        f'{len(other_params)} + {len(shared_params)} != ' \
+        f'{len(list(net1.parameters()))} + {len(list(net2.parameters()))}'
 
     return optim.SGD(
         optim_params,
