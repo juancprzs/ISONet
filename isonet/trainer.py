@@ -140,9 +140,9 @@ class Trainer(object):
                    f'Acc2: {100. * correct2 / total:.3f} | CE: {self.ce_loss2 / len(self.val_loader):.3f} | ' \
                    f'Disag: {self.disagreement / len(self.val_loader):.3f} | ' \
                    f'best: {self.best_valid_acc:.3f} | ' \
-                   f'Rob. acc: {100. * rob_acc:.3f} |' \
-                   f'Rob. acc1: {100. * rob_acc1:.3f} |' \
-                   f'Rob. acc2: {100. * rob_acc2:.3f} |'
+                   f'Rob. acc: {100. * rob_acc:.3f} | ' \
+                   f'Rob. acc1: {100. * rob_acc1:.3f} | ' \
+                   f'Rob. acc2: {100. * rob_acc2:.3f} | '
         print(info_str)
         self.logger.info(info_str)
         self.val_acc.append(100. * correct / total)
