@@ -40,7 +40,7 @@ class Trainer(object):
         # others
         self.ave_time = 0
         self.logger = logger
-        self.kl_crit = nn.KLDivLoss()
+        self.kl_crit = nn.KLDivLoss(reduction='batchmean')
 
 
     def train(self):
@@ -55,7 +55,7 @@ class Trainer(object):
         self.model2.train()
         self.ce_loss, self.ce_loss1, self.ce_loss2, self.disagreement = 0, 0, 0, 0
         self.ave_time = 0
-        correct = 0
+        correct, correct1, correct2 = 0, 0, 0
         total = 0
         epoch_t = time.time()
         for batch_idx, (inputs, targets) in enumerate(self.train_loader):
@@ -100,7 +100,7 @@ class Trainer(object):
         self.model1.eval()
         self.model2.eval()
         self.ce_loss, self.ce_loss1, self.ce_loss2, self.disagreement = 0, 0, 0, 0
-        correct = 0
+        correct, correct1, correct2 = 0, 0, 0
         total = 0
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(self.val_loader):
