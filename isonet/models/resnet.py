@@ -128,7 +128,7 @@ class ResNet(nn.Module):
         out = F.avg_pool2d(out, 4)
         embeddings = out.view(out.size(0), -1)
         logits = self.linear(embeddings)
-        return logits, embeddings
+        return logits
 
 def ResNet18(**kwargs):
     return ResNet(BasicBlock, [2,2,2,2], **kwargs)
