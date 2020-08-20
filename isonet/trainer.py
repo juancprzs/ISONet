@@ -222,7 +222,8 @@ class Trainer(object):
 
     def snapshot(self, name=None):
         state = {
-            'net': self.model.model.state_dict(),
+            'net1': self.model1.model.state_dict(),
+            'net2': self.model2.model.state_dict(),
             'optim': self.optim.state_dict(),
             'epoch': self.epochs,
             'train_accuracy': self.train_acc,
