@@ -120,7 +120,7 @@ class Trainer(object):
         if 100. * correct / total > self.best_valid_acc:
             self.snapshot('best')
         self.snapshot('latest')
-        self.snapshot(None) # save ALL snapshots
+        # self.snapshot(None) # save ALL snapshots
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
         cheap = True # self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
         # attack ensemble

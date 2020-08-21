@@ -12,4 +12,4 @@
 #SBATCH --mail-user=perezjc@kaust.edu.sa
 #SBATCH --mail-type=ALL
 
-python train.py --cfg configs/exp${SLURM_ARRAY_TASK_ID}.yml --gpus 0 --output ensemble_debug
+python train.py --cfg configs/exp${SLURM_ARRAY_TASK_ID}.yml --gpus 0 --output adv_col_${SLURM_ARRAY_TASK_ID}
