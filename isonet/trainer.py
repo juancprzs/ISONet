@@ -122,7 +122,7 @@ class Trainer(object):
         self.snapshot('latest')
         self.snapshot(None) # save ALL snapshots
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
-        cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
+        cheap = True # self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
         # attack ensemble
         model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
         rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=cheap)
