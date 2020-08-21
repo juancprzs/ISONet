@@ -17,7 +17,7 @@ import pdb
 
 class Trainer(object):
     def __init__(self, device, train_loader, val_loader, model1, model2, optim, 
-            logger, output_dir):
+            logger, output_dir, eps=2./255.):
         # misc
         self.device = device
         self.output_dir = output_dir
@@ -41,6 +41,7 @@ class Trainer(object):
         self.ave_time = 0
         self.logger = logger
         self.kl_crit = nn.KLDivLoss(reduction='batchmean')
+        self.eps = eps
 
 
     def train(self):
@@ -149,11 +150,11 @@ class Trainer(object):
 
     def get_rob_acc(self, model_forward, cheap=False):
         adversary = AutoAttack(model_forward, norm='Linf', 
-            eps=8./255., plus=False, verbose=False)
+            eps=self.eps, plus=False, verbose=False)
         if cheap:
             print(f'Running CHEAP adversarial attack')
             adversary = AutoAttack(
-                model_forward, norm='Linf', eps=8./255., plus=False, 
+                model_forward, norm='Linf', eps=self.eps, plus=False, 
                 verbose=False, attacks_to_run=['apgd-ce']
             )
         else:
