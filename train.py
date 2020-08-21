@@ -26,6 +26,7 @@ def arg_parse():
     parser.add_argument('--gpus', type=str)
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--seed', default=111, type=int)
+    parser.add_argument('--wrng-disag', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -101,7 +102,8 @@ def main():
         net2,
         optim,
         logger,
-        output_dir
+        output_dir,
+        wrng_disag=args.wrng_disag
     )
 
     if args.resume:

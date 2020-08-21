@@ -17,7 +17,7 @@ import pdb
 
 class Trainer(object):
     def __init__(self, device, train_loader, val_loader, model1, model2, optim, 
-            logger, output_dir, eps=2./255.):
+            logger, output_dir, eps=2./255., wrng_disag=False):
         # misc
         self.device = device
         self.output_dir = output_dir
@@ -42,6 +42,7 @@ class Trainer(object):
         self.logger = logger
         self.kl_crit = nn.KLDivLoss(reduction='batchmean')
         self.eps = eps
+        self.wrng_disag = wrng_disag # compute disagreement among WRONG logits
 
 
     def train(self):
@@ -194,15 +195,14 @@ class Trainer(object):
         loss_mix = self.criterion((outputs1 + outputs2) / 2., targets)
         self.ce_loss += loss_mix.item()
         # # disagreement term
-        # between 1 and 2
-        import pdb; pdb.set_trace()
-        if True: # only compute disagreement b/w logits of WRONG classes
+        if self.wrng_disag: # only compute disagreement b/w logits of WRONG classes
             n_insts, n_classes = outputs1.size(0), outputs1.size(1)
             wrng_msk = torch.arange(n_classes).unsqueeze(0).expand(n_insts, -1)
             wrng_msk = wrng_msk.to(self.device) != targets.unsqueeze(1)
             outputs1 = outputs1[wrng_msk].view(n_insts, -1)
             outputs2 = outputs2[wrng_msk].view(n_insts, -1)
 
+        # between 1 and 2
         inter_loss_12 = self.kl_crit(F.log_softmax(outputs1, dim=1),
                                      F.softmax(outputs2, dim=1))
         # between 2 and 1
