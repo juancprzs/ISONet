@@ -5,7 +5,7 @@
 #SBATCH -J ensem_search
 #SBATCH -o logs/ensem_search.%J.out
 #SBATCH -e logs/ensem_search.%J.err
-#SBATCH --time=30:00:00
+#SBATCH --time=17:00:00
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
