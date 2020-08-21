@@ -8,6 +8,9 @@ parser.add_argument('--exp', required=True, help='pattern for experiment names',
     type=str)
 args = parser.parse_args()
 
+# run like
+# for f in adv_col_{1..5}; do echo $f; python plot_results.py --exp $f; echo ""; done
+
 pattern = f'outputs/cls/CIFAR10/{args.exp}/*.txt'
 ff = sorted(glob(pattern))[0]
 
@@ -36,7 +39,7 @@ accs_m2 = [float(x.split('|')[5].split(':')[1].strip()) for x in lines]
 # xent loss
 xent_ens = [float(x.split('|')[2].split(':')[1].strip()) for x in lines]
 xent_m1 = [float(x.split('|')[4].split(':')[1].strip()) for x in lines]
-xent_m1 = [float(x.split('|')[6].split(':')[1].strip()) for x in lines]
+xent_m2 = [float(x.split('|')[6].split(':')[1].strip()) for x in lines]
 # disagreement
 disagg = [float(x.split('|')[7].split(':')[1].strip()) for x in lines]
 # robust accs
