@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH --partition=batch
-#SBATCH --array=[1-7]
+#SBATCH --array=[1-5]
 #SBATCH -J ensem_search
 #SBATCH -o logs/ensem_search.%J.out
 #SBATCH -e logs/ensem_search.%J.err
