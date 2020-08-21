@@ -195,6 +195,13 @@ class Trainer(object):
         self.ce_loss += loss_mix.item()
         # # disagreement term
         # between 1 and 2
+        import pdb; pdb.set_trace()
+        if True: # only compute disagreement b/w logits of WRONG classes
+            n_insts, n_classes = outputs1.size(0), outputs1.size(1)
+            wrng_msk = torch.arange(n_classes).unsqueeze(0).expand(n_insts, -1)
+            wrng_msk = wrng_msk != targets.unsqueeze(1)
+            outputs1, outputs2 = outputs1[wrng_msk], outputs2[wrng_msk]
+
         inter_loss_12 = self.kl_crit(F.log_softmax(outputs1, dim=1),
                                      F.softmax(outputs2, dim=1))
         # between 2 and 1
