@@ -171,8 +171,7 @@ class Trainer(object):
         return rob_acc, nat_acc
 
     def loss(self, outputs, targets, inputs=None):
-        if self.trades:
-            assert outputs is None
+        if self.trades and (outputs is None):
             assert inputs is not None
             outputs, loss = trades_loss(
                 self.model, inputs, targets, self.optim, step_size=0.007, 
