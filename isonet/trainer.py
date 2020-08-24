@@ -67,10 +67,8 @@ class Trainer(object):
             if self.trades:
                 # default parameters taken from
                 # https://github.com/yaodongyu/TRADES/blob/master/train_trades_cifar10.py#L30
-                outputs, loss = trades_loss(
-                    self.model, inputs, targets, self.optim, step_size=0.007, 
-                    epsilon=0.031, perturb_steps=10, beta=6.0, distance='l_inf'
-                )
+                outputs, loss = self.loss(outputs=None, targets=targets, 
+                    inputs=inputs)
             else:
                 outputs = self.model(inputs)
                 loss = self.loss(outputs, targets)
@@ -172,15 +170,24 @@ class Trainer(object):
         rob_acc, nat_acc = adv_correct / total, correct / total
         return rob_acc, nat_acc
 
-    def loss(self, outputs, targets):
-        loss = self.criterion(outputs, targets)
+    def loss(self, outputs, targets, inputs=None):
+        if self.trades:
+            assert outputs is None
+            assert inputs is not None
+            outputs, loss = trades_loss(
+                self.model, inputs, targets, self.optim, step_size=0.007, 
+                epsilon=0.031, perturb_steps=10, beta=6.0, distance='l_inf'
+            )
+        else:
+            loss = self.criterion(outputs, targets)
         self.ce_loss += loss.item()
 
         if C.ISON.ORTHO_COEFF > 0:
             o_loss = self.model.model.module.ortho()
             self.ortho_loss += o_loss.item()
             loss += o_loss * C.ISON.ORTHO_COEFF
-        return loss
+        
+        return (outputs, loss) if self.trades else loss
 
     def adjust_learning_rate(self):
         # if do linear warmup
