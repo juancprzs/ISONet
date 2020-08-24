@@ -13,7 +13,7 @@ SOLVER:
   TRADES: True
 ISON:
   DEPTH: 18
-  ORTHO_COEFF: 0.01
+  ORTHO_COEFF: 0.1
   HAS_BN: False
   HAS_ST: False
   SReLU: True
