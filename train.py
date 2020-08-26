@@ -14,6 +14,7 @@ import isonet.utils.logger as lu
 
 from isonet.models import *
 from isonet.models.resnet import ResNet18
+from torchvision.models import mobilenet_v2
 from isonet.trainer import Trainer
 
 import numpy as np
@@ -27,6 +28,7 @@ def arg_parse():
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--seed', default=111, type=int)
     parser.add_argument('--wrng-disag', action='store_true')
+    parser.add_argument('--mobilenet', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -78,14 +80,14 @@ def main():
     train_loader, val_loader = du.construct_dataset()
 
     # net1
-    net1 = ResNet18()
+    net1 = mobilenet_v2(num_classes=10) if args.mobilenet else ResNet18()
     net1.to(torch.device('cuda'))
     net1 = torch.nn.DataParallel(
         net1, device_ids=list(range(args.gpus.count(',') + 1))
     )
     net1 = ModelWrapper(net1)
     # net1
-    net2 = ResNet18()
+    net2 = mobilenet_v2(num_classes=10) if args.mobilenet else ResNet18()
     net2.to(torch.device('cuda'))
     net2 = torch.nn.DataParallel(
         net2, device_ids=list(range(args.gpus.count(',') + 1))
