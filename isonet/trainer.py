@@ -17,7 +17,7 @@ import pdb
 
 class Trainer(object):
     def __init__(self, device, train_loader, val_loader, model1, model2, optim, 
-            logger, output_dir, eps=2./255., wrng_disag=False):
+            logger, output_dir, eps=2./255., probs=False):
         # misc
         self.device = device
         self.output_dir = output_dir
@@ -40,9 +40,9 @@ class Trainer(object):
         # others
         self.ave_time = 0
         self.logger = logger
-        self.kl_crit = nn.KLDivLoss(reduction='batchmean')
+        self.kl_crit = nn.KLDivLoss(reduction='none')
         self.eps = eps
-        self.wrng_disag = wrng_disag # compute disagreement among WRONG logits
+        self.probs = probs # compute disagreement among WRONG logits
 
 
     def train(self):
@@ -126,15 +126,15 @@ class Trainer(object):
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
         cheap = True # self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
         # attack ensemble
-        model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
-        rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=cheap)
-        assert nat_acc == correct / total
+        # model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
+        rob_acc, nat_acc = 0.0, 0.0 # self.get_rob_acc(model_forward, cheap=cheap)
+        # assert nat_acc == correct / total
         # attack model 1
-        rob_acc1, nat_acc1 = self.get_rob_acc(self.model1.forward, cheap=cheap)
-        assert nat_acc1 == correct1 / total
+        rob_acc1, nat_acc1 = 0.0, 0.0 # self.get_rob_acc(self.model1.forward, cheap=cheap)
+        # assert nat_acc1 == correct1 / total
         # attack model 2
-        rob_acc2, nat_acc2 = self.get_rob_acc(self.model2.forward, cheap=cheap)
-        assert nat_acc2 == correct2 / total
+        rob_acc2, nat_acc2 = 0.0, 0.0 # self.get_rob_acc(self.model2.forward, cheap=cheap)
+        # assert nat_acc2 == correct2 / total
 
         info_str = f'valid | ' \
                    f'Acc: {100. * correct / total:.3f} | CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
@@ -194,20 +194,33 @@ class Trainer(object):
         # xent of mixture
         loss_mix = self.criterion((outputs1 + outputs2) / 2., targets)
         self.ce_loss += loss_mix.item()
+
         # # disagreement term
-        if self.wrng_disag: # only compute disagreement b/w logits of WRONG classes
-            n_insts, n_classes = outputs1.size(0), outputs1.size(1)
-            wrng_msk = torch.arange(n_classes).unsqueeze(0).expand(n_insts, -1)
-            wrng_msk = wrng_msk.to(self.device) != targets.unsqueeze(1)
+        n_insts, n_classes = outputs1.size(0), outputs1.size(1)
+        wrng_msk = torch.arange(n_classes).unsqueeze(0).expand(n_insts, -1)
+        wrng_msk = wrng_msk.to(self.device) != targets.unsqueeze(1)
+        if self.probs: # compute disagreement with probability over wrng classes
             outputs1 = outputs1[wrng_msk].view(n_insts, -1)
             outputs2 = outputs2[wrng_msk].view(n_insts, -1)
+            # between 1 and 2
+            inter_loss_12 = self.kl_crit(F.log_softmax(outputs1, dim=1),
+                                        F.softmax(outputs2, dim=1))
+            # between 2 and 1
+            inter_loss_21 = self.kl_crit(F.log_softmax(outputs2, dim=1),
+                                        F.softmax(outputs1, dim=1))
+        else: # compute disagreement without considering the wrng classes
+            # between 1 and 2
+            inter_loss_12 = self.kl_crit(F.log_softmax(outputs1, dim=1),
+                                        F.softmax(outputs2, dim=1))
+            # between 2 and 1
+            inter_loss_21 = self.kl_crit(F.log_softmax(outputs2, dim=1),
+                                        F.softmax(outputs1, dim=1))
+            inter_loss_12 = inter_loss_12[wrng_msk].view(n_insts, -1)
+            inter_loss_21 = inter_loss_21[wrng_msk].view(n_insts, -1)
+        
+        inter_loss_12 = inter_loss_12.sum(dim=1).mean()
+        inter_loss_21 = inter_loss_21.sum(dim=1).mean()
 
-        # between 1 and 2
-        inter_loss_12 = self.kl_crit(F.log_softmax(outputs1, dim=1),
-                                     F.softmax(outputs2, dim=1))
-        # between 2 and 1
-        inter_loss_21 = self.kl_crit(F.log_softmax(outputs2, dim=1),
-                                     F.softmax(outputs1, dim=1))
         disagreement = inter_loss_12 + inter_loss_21
         self.disagreement += disagreement.item()
 
