@@ -124,17 +124,21 @@ class Trainer(object):
         self.snapshot('latest')
         # self.snapshot(None) # save ALL snapshots
         self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
-        cheap = True # self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
-        # attack ensemble
-        # model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
-        rob_acc, nat_acc = 0.0, 0.0 # self.get_rob_acc(model_forward, cheap=cheap)
-        # assert nat_acc == correct / total
-        # attack model 1
-        rob_acc1, nat_acc1 = 0.0, 0.0 # self.get_rob_acc(self.model1.forward, cheap=cheap)
-        # assert nat_acc1 == correct1 / total
-        # attack model 2
-        rob_acc2, nat_acc2 = 0.0, 0.0 # self.get_rob_acc(self.model2.forward, cheap=cheap)
-        # assert nat_acc2 == correct2 / total
+        if self.epochs == C.SOLVER.MAX_EPOCHS:
+            # attack ensemble
+            model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
+            rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=True)
+            assert nat_acc == correct / total
+            # attack model 1
+            rob_acc1, nat_acc1 = self.get_rob_acc(self.model1.forward, cheap=True)
+            assert nat_acc1 == correct1 / total
+            # attack model 2
+            rob_acc2, nat_acc2 = self.get_rob_acc(self.model2.forward, cheap=True)
+            assert nat_acc2 == correct2 / total
+        else:
+            rob_acc, nat_acc = 0.0, 0.0
+            rob_acc1, nat_acc1 = 0.0, 0.0
+            rob_acc2, nat_acc2 = 0.0, 0.0
 
         info_str = f'valid | ' \
                    f'Acc: {100. * correct / total:.3f} | CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
