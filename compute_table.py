@@ -148,7 +148,7 @@ for idx1, idx2 in pbar:
     if idx1 in rob_accs:
         rob_acc1 = rob_accs[idx1]
     else:
-        rob_acc1, nat_acc1 = 0.0, nat_acc1 # compute_robustness(lambda x: net1(x), val_loader)
+        rob_acc1, nat_acc1 = 0.0, acc1 # compute_robustness(lambda x: net1(x), val_loader)
         rob_accs[idx1] = rob_acc1
         assert nat_acc1 == acc1
     pbar.set_description(f'M1. Acc: {100.*nat_acc1:2.3f} - Rob. Acc: {100.*rob_acc1:2.3f}')
@@ -156,7 +156,7 @@ for idx1, idx2 in pbar:
     if idx2 in rob_accs:
         rob_acc2 = rob_accs[idx2]
     else:
-        rob_acc2, nat_acc2 = 0.0, nat_acc2 # compute_robustness(lambda x: net2(x), val_loader)
+        rob_acc2, nat_acc2 = 0.0, acc2 # compute_robustness(lambda x: net2(x), val_loader)
         rob_accs[idx2] = rob_acc2
         assert nat_acc2 == acc2
     pbar.set_description(f'M2. Acc: {100.*nat_acc2:2.3f} - Rob. Acc: {100.*rob_acc2:2.3f}')
