@@ -116,7 +116,7 @@ class Trainer(object):
         # Lipschitz constant and robust accuracy
         lip_with_pool, lip_no_pool = 0.0, 0.0 # self.get_lipschitz_const()
         # cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
-        # rob_acc, nat_acc = self.get_rob_acc(cheap=cheap)
+        rob_acc, nat_acc = 0.0, 0.0 # self.get_rob_acc(cheap=cheap)
         # assert nat_acc == correct / total
 
         info_str = f'valid | Acc: {100. * correct / total:.3f} | ' \
