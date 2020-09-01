@@ -68,6 +68,9 @@ def eval_models(model1, model2, loader):
     with torch.no_grad():
         for inputs, targets in loader:
             inputs, targets = inputs.to('cuda'), targets.to('cuda')
+            # counts
+            curr_insts = targets.size(0)
+            total += curr_insts
             # compute accs
             # model1
             outputs1 = model1(inputs)
@@ -80,12 +83,10 @@ def eval_models(model1, model2, loader):
             correct3 += outputs3.max(1)[1].eq(targets).sum().item()
 
             # compute disags
-            disag1 += compute_disag(outputs1, outputs2, targets, d_type='all')
-            disag2 += compute_disag(outputs1, outputs2, targets, d_type='wrng')
-            disag3 += compute_disag(outputs1, outputs2, targets, d_type='wrng2')
+            disag1 += curr_insts * compute_disag(outputs1, outputs2, targets, d_type='all')
+            disag2 += curr_insts * compute_disag(outputs1, outputs2, targets, d_type='wrng')
+            disag3 += curr_insts * compute_disag(outputs1, outputs2, targets, d_type='wrng2')
 
-            # counts
-            total += targets.size(0)
 
     acc1, acc2, acc3 = correct1/total, correct2/total, correct3/total
     disag1, disag2, disag3 = disag1/total, disag2/total, disag3/total
