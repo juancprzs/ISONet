@@ -162,7 +162,7 @@ for idx1, idx2 in pbar:
     pbar.set_description(f'M2. Acc: {100.*nat_acc2:2.3f} - Rob. Acc: {100.*rob_acc2:2.3f}')
     # ensemble
     ensem_forward = lambda x: (net1(x) + net2(x)) / 2.
-    rob_acc3, nat_acc3 = compute_robustness(ensem_forward, val_loader)
+    rob_acc3, nat_acc3 = 0.0, acc3 # compute_robustness(ensem_forward, val_loader)
     pbar.set_description(f'ENS. Acc: {100.*nat_acc3:2.3f} - Rob. Acc: {100.*rob_acc3:2.3f}')
     assert nat_acc3 == acc3
     # # add to dict
