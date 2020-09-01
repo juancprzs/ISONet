@@ -119,11 +119,9 @@ def compute_robustness(model_forward, loader):
         return rob_acc, nat_acc
 
 # net1
-net1 = ModelWrapper(
-    torch.nn.DataParallel(ISONet(size='small').to('cuda')), normalize=True)
+net1 = ModelWrapper(torch.nn.DataParallel(ResNet18().to('cuda')))
 # net1
-net2 = ModelWrapper(
-    torch.nn.DataParallel(ISONet(size='small').to('cuda')), normalize=True)
+net2 = ModelWrapper(torch.nn.DataParallel(ResNet18().to('cuda')))
 
 _, val_loader = du.construct_dataset()
 
