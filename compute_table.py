@@ -132,10 +132,10 @@ rob_accs = {}
 
 for idx1, idx2 in pbar:
     # net1
-    m1 = torch.load(f'outputs/cls/CIFAR10/ISONet_small_{idx1}/best.pt')['net']
+    m1 = torch.load(f'outputs/cls/CIFAR10/ResNet_{idx1}/best.pt')['net']
     net1.model.load_state_dict(m1)
     # net2
-    m2 = torch.load(f'outputs/cls/CIFAR10/ISONet_small_{idx2}/best.pt')['net']
+    m2 = torch.load(f'outputs/cls/CIFAR10/ResNet_{idx2}/best.pt')['net']
     net2.model.load_state_dict(m2)
     # evaluate (and compute disagreements)
     acc1, acc2, acc3, disag1, disag2, disag3 = eval_models(net1, net2, val_loader)
