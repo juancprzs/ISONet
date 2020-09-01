@@ -17,7 +17,7 @@ EPS = 2./255.
 C.merge_from_file('configs/CIF10-ISO18.yaml')
 FILENAME = osp.join('.', 'ensembles_results_final.csv')
 DF_COLS = ['m1', 'm2', 'acc1', 'acc2', 'acc3', 'disag_all', 'disag_wrng', \
-    'disag_wrng_2', 'rob_acc1', 'rob_acc2', 'rob_acc3']
+    'disag_wrng2', 'rob_acc1', 'rob_acc2', 'rob_acc3']
 
 def compute_disag(outputs1, outputs2, targets, d_type):
     if d_type == 'all': # only compute disagreement b/w logits of WRONG classes
