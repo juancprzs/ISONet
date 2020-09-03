@@ -146,10 +146,9 @@ class Trainer(object):
     def get_rob_acc(self, cheap=False):
         adversary = AutoAttack(self.model.forward, norm='Linf', 
             eps=8./255., verbose=False)
-        if cheap: # based on https://github.com/fra31/auto-attack
-            adversary.attacks_to_run = ['apgd-ce', 'fab']
-            adversary.apgd.n_restarts = 1
-            adversary.fab.n_restarts = 2
+        if cheap: # compare to https://github.com/fra31/auto-attack/blob/master/autoattack/autoattack.py#L230
+            adversary.apgd.n_iter = 20
+            adversary.square.n_queries = 1000
         else:
             print(f'Running EXPENSIVE adversarial attack')
         # run actual attack
