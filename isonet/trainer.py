@@ -145,7 +145,7 @@ class Trainer(object):
 
     def get_rob_acc(self, cheap=False):
         adversary = AutoAttack(self.model.forward, norm='Linf', 
-            eps=8./255., plus=False, verbose=False)
+            eps=8./255., verbose=False)
         if cheap: # based on https://github.com/fra31/auto-attack
             adversary.attacks_to_run = ['apgd-ce', 'fab']
             adversary.apgd.n_restarts = 2
