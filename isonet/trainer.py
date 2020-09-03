@@ -148,7 +148,7 @@ class Trainer(object):
             eps=8./255., verbose=False)
         if cheap: # based on https://github.com/fra31/auto-attack
             adversary.attacks_to_run = ['apgd-ce', 'fab']
-            adversary.apgd.n_restarts = 2
+            adversary.apgd.n_restarts = 1
             adversary.fab.n_restarts = 2
         else:
             print(f'Running EXPENSIVE adversarial attack')
