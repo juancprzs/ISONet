@@ -36,6 +36,7 @@ class Trainer(object):
         # loss settings
         self.train_acc, self.val_acc = [], []
         self.best_valid_acc = 0
+        self.best_rob_acc = 0
         self.ce_loss, self.ortho_loss = 0, 0
         # others
         self.ave_time = 0
@@ -108,21 +109,28 @@ class Trainer(object):
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
 
-        if 100. * correct / total > self.best_valid_acc:
-            self.snapshot('best')
-        self.snapshot('latest')
+        
         # self.snapshot(None) # save ALL snapshots
-        self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
+        acc = correct / total
+        self.best_valid_acc = max(self.best_valid_acc, 100. * acc)
         # Lipschitz constant and robust accuracy
         lip_with_pool, lip_no_pool = 0.0, 0.0 # self.get_lipschitz_const()
-        # cheap = self.epochs < C.SOLVER.MAX_EPOCHS # cheap attack for all epochs but the last
-        rob_acc, nat_acc = 0.0, 0.0 # self.get_rob_acc(cheap=cheap)
-        # assert nat_acc == correct / total
+        rob_acc, nat_acc = self.get_rob_acc(cheap=True)
+        assert nat_acc == acc
+        if acc > 0.8: # larger than 80% acc
+            if 100. * rob_acc > self.best_rob_acc:
+                self.snapshot('best')
+                self.best_rob_acc = 100. * rob_acc
+        else:
+            if 100. * acc > self.best_valid_acc:
+                self.snapshot('best')
+                self.best_valid_acc = 100. * acc
 
         info_str = f'valid | Acc: {100. * correct / total:.3f} | ' \
                    f'CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
                    f'O: {self.ortho_loss / len(self.val_loader):.3f} | ' \
                    f'best: {self.best_valid_acc:.3f} | ' \
+                   f'best_r: {self.best_rob_acc:.3f} | ' \
                    f'L w. pool: {lip_with_pool:5.3E} | ' \
                    f'L no pool: {lip_no_pool:5.3E} | ' \
                    f'Rob. acc: {100. * rob_acc:.3f}' 
@@ -138,12 +146,10 @@ class Trainer(object):
     def get_rob_acc(self, cheap=False):
         adversary = AutoAttack(self.model.forward, norm='Linf', 
             eps=8./255., plus=False, verbose=False)
-        if cheap:
-            print(f'Running CHEAP adversarial attack')
-            adversary = AutoAttack(
-                self.model.forward, norm='Linf', eps=8./255., plus=False, 
-                verbose=False, attacks_to_run=['apgd-ce']
-            )
+        if cheap: # based on https://github.com/fra31/auto-attack
+            adversary.attacks_to_run = ['apgd-ce', 'fab']
+            adversary.apgd.n_restarts = 2
+            adversary.fab.n_restarts = 2
         else:
             print(f'Running EXPENSIVE adversarial attack')
         # run actual attack
@@ -157,8 +163,6 @@ class Trainer(object):
                 _, predicted = self.model(X).max(1)
                 correct += predicted.eq(y).sum().item()
                 # adversarial eval
-                if cheap: # run cheap version of the attack
-                    adversary.cheap()
                 x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
                 _, adv_predicted = self.model(x_adv).max(1)
                 adv_correct += adv_predicted.eq(y).sum().item()
