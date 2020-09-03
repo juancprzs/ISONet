@@ -147,6 +147,7 @@ class Trainer(object):
         adversary = AutoAttack(self.model.forward, norm='Linf', 
             eps=8./255., verbose=False)
         if cheap: # compare to https://github.com/fra31/auto-attack/blob/master/autoattack/autoattack.py#L230
+            adversary.attacks_to_run = ['apgd-ce', 'square']
             adversary.apgd.n_iter = 20
             adversary.square.n_queries = 1000
         else:
