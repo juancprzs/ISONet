@@ -149,7 +149,7 @@ class Trainer(object):
         if cheap: # compare to https://github.com/fra31/auto-attack/blob/master/autoattack/autoattack.py#L230
             adversary.attacks_to_run = ['apgd-ce', 'square']
             adversary.apgd.n_iter = 20
-            adversary.square.n_queries = 1000
+            adversary.square.n_queries = 500
         else:
             print(f'Running EXPENSIVE adversarial attack')
         # run actual attack
