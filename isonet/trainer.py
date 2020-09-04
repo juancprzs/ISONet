@@ -115,7 +115,7 @@ class Trainer(object):
         self.best_valid_acc = max(self.best_valid_acc, 100. * acc)
         # Lipschitz constant and robust accuracy
         lip_with_pool, lip_no_pool = 0.0, 0.0 # self.get_lipschitz_const()
-        if acc > 0.85: # larger than 85% acc
+        if acc > 0.90: # larger than 90% acc
             rob_acc, nat_acc = self.get_rob_acc(cheap=True)
             assert nat_acc == acc
             if 100. * rob_acc > self.best_rob_acc:
