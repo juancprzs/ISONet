@@ -35,6 +35,7 @@ class Trainer(object):
         # loss settings
         self.train_acc, self.val_acc = [], []
         self.best_valid_acc = 0
+        self.best_rob_acc = 0
         self.ce_loss, self.ce_loss1, self.ce_loss2 = 0, 0, 0
         self.disagreement = 0
         # others
@@ -119,26 +120,22 @@ class Trainer(object):
                 correct1 += predicted1.eq(targets).sum().item()
                 correct2 += predicted2.eq(targets).sum().item()
 
-        if 100. * correct / total > self.best_valid_acc:
-            self.snapshot('best')
-        self.snapshot('latest')
         # self.snapshot(None) # save ALL snapshots
-        self.best_valid_acc = max(self.best_valid_acc, 100. * correct / total)
-        if False: # self.epochs == C.SOLVER.MAX_EPOCHS:
-            # attack ensemble
+        acc = correct / total
+        self.best_valid_acc = max(self.best_valid_acc, 100. * acc)
+        # robust accuracy
+        if acc > 0.90: # larger than 90% acc
             model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
             rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=True)
-            assert nat_acc == correct / total
-            # attack model 1
-            rob_acc1, nat_acc1 = self.get_rob_acc(self.model1.forward, cheap=True)
-            assert nat_acc1 == correct1 / total
-            # attack model 2
-            rob_acc2, nat_acc2 = self.get_rob_acc(self.model2.forward, cheap=True)
-            assert nat_acc2 == correct2 / total
+            assert nat_acc == acc
+            if 100. * rob_acc > self.best_rob_acc:
+                self.snapshot('best')
+                self.best_rob_acc = 100. * rob_acc
         else:
-            rob_acc, nat_acc = 0.0, 0.0
-            rob_acc1, nat_acc1 = 0.0, 0.0
-            rob_acc2, nat_acc2 = 0.0, 0.0
+            rob_acc = 0.0
+            if 100. * acc > self.best_valid_acc:
+                self.snapshot('best')
+                self.best_valid_acc = 100. * acc
 
         info_str = f'valid | ' \
                    f'Acc: {100. * correct / total:.3f} | CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
@@ -146,22 +143,19 @@ class Trainer(object):
                    f'Acc2: {100. * correct2 / total:.3f} | CE: {self.ce_loss2 / len(self.val_loader):.3f} | ' \
                    f'Disag: {self.disagreement / len(self.val_loader):.3f} | ' \
                    f'best: {self.best_valid_acc:.3f} | ' \
-                   f'Rob. acc: {100. * rob_acc:.3f} | ' \
-                   f'Rob. acc1: {100. * rob_acc1:.3f} | ' \
-                   f'Rob. acc2: {100. * rob_acc2:.3f} | '
+                   f'best_r: {self.best_rob_acc:.3f} | ' \
+                   f'Rob. acc: {100. * rob_acc:.3f} | '
         print(info_str)
         self.logger.info(info_str)
         self.val_acc.append(100. * correct / total)
 
     def get_rob_acc(self, model_forward, cheap=False):
         adversary = AutoAttack(model_forward, norm='Linf', 
-            eps=self.eps, plus=False, verbose=False)
-        if cheap:
-            print(f'Running CHEAP adversarial attack')
-            adversary = AutoAttack(
-                model_forward, norm='Linf', eps=self.eps, plus=False, 
-                verbose=False, attacks_to_run=['apgd-ce']
-            )
+            eps=2./255., verbose=False)
+        if cheap: # compare to https://github.com/fra31/auto-attack/blob/master/autoattack/autoattack.py#L230
+            adversary.attacks_to_run = ['apgd-ce', 'square']
+            adversary.apgd.n_iter = 10
+            adversary.square.n_queries = 500
         else:
             print(f'Running EXPENSIVE adversarial attack')
         # run actual attack
@@ -175,8 +169,6 @@ class Trainer(object):
                 _, predicted = model_forward(X).max(1)
                 correct += predicted.eq(y).sum().item()
                 # adversarial eval
-                if cheap: # run cheap version of the attack
-                    adversary.cheap()
                 x_adv = adversary.run_standard_evaluation(X, y, bs=y.size(0))
                 _, adv_predicted = model_forward(x_adv).max(1)
                 adv_correct += adv_predicted.eq(y).sum().item()
