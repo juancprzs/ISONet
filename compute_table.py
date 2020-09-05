@@ -95,9 +95,7 @@ def eval_models(model1, model2, loader):
 
 def compute_robustness(model_forward, loader):
     # adversary
-    adversary = AutoAttack(model_forward, norm='Linf', eps=EPS, plus=False, 
-        verbose=False)
-    adversary.cheap()
+    adversary = AutoAttack(model_forward, norm='Linf', eps=EPS, verbose=False)
     total, correct, adv_correct = 0, 0, 0
     with torch.no_grad():
         pbar = tqdm(loader)
