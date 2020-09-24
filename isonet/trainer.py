@@ -61,8 +61,8 @@ class Trainer(object):
         path = f'{self.output_dir}/best.pt'
         print(f'Computing final rob. acc. Loading ckpt from {path}...', end=' ')
         ckpt = torch.load(path)
-        self.model1.load_state_dict(ckpt['net1'])
-        self.model2.load_state_dict(ckpt['net2'])
+        self.model1.model.load_state_dict(ckpt['net1'])
+        self.model2.model.load_state_dict(ckpt['net2'])
         print('done.')
         model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
         rob_acc, _ = self.get_rob_acc(model_forward, cheap=False, test=True)
