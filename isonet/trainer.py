@@ -249,7 +249,11 @@ class Trainer(object):
         disagreement = inter_loss_12 + inter_loss_21
         self.disagreement += disagreement.item()
 
-        return loss1 + loss2 - C.SOLVER.DISAG_COEFF * disagreement
+        final_loss = loss1 + loss2
+        if C.SOLVER.DISAG_COEFF != 0.0:
+            final_loss = final_loss - C.SOLVER.DISAG_COEFF * disagreement
+        
+        return final_loss
 
     def adjust_learning_rate(self):
         # if do linear warmup
