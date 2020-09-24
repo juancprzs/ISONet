@@ -147,12 +147,18 @@ class Trainer(object):
         else:
             set_name = 'val'
             # robust accuracy
-            model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
-            rob_acc, _ = self.get_rob_acc(model_forward, cheap=True, test=test)
-            if 100. * rob_acc > self.best_rob_acc:
-                self.snapshot('best')
-                self.best_rob_acc = 100. * rob_acc
-                self.best_valid_acc =  100. * acc
+            if acc > 0.85: # larger than 90% acc
+                model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
+                rob_acc, _ = self.get_rob_acc(model_forward, cheap=True, test=test)
+                if 100. * rob_acc > self.best_rob_acc:
+                    self.snapshot('best')
+                    self.best_rob_acc = 100. * rob_acc
+                    self.best_valid_acc =  100. * acc
+            else:
+                rob_acc = 0.0
+                if 100. * acc > self.best_valid_acc:
+                    self.snapshot('best')
+                    self.best_valid_acc = 100. * acc
 
         info_str = f'{set_name} | ' \
                    f'Acc: {100.*correct/total:.3f} | CE: {self.ce_loss/len(loader):.3f} | ' \
