@@ -65,7 +65,7 @@ class Trainer(object):
         self.model2.model.load_state_dict(ckpt['net2'])
         print('done.')
         model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
-        rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=True, test=True)
+        rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=False, test=True)
         info_str = f'Final accuracies: nat={100.*nat_acc} , rob={100.*rob_acc}'
         print(info_str)
         self.logger.info(info_str)
