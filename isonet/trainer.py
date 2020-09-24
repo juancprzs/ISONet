@@ -158,14 +158,16 @@ class Trainer(object):
             self.val_acc.append(100.*correct/total)
 
     def get_rob_acc(self, model_forward, cheap=False, test=False):
-        adversary = AutoAttack(model_forward, norm='Linf', 
-            eps=2./255., verbose=False)
+        adversary = AutoAttack(model_forward, norm='Linf', eps=self.eps, 
+            verbose=False)
         if cheap: # compare to https://github.com/fra31/auto-attack/blob/master/autoattack/autoattack.py#L230
+            cost = 'CHEAP'
             adversary.attacks_to_run = ['apgd-ce', 'square']
             adversary.apgd.n_iter = 5
             adversary.square.n_queries = 100
         else:
-            print(f'Running EXPENSIVE adversarial attack')
+            cost = 'EXPENSIVE'
+        print(f'Running EXPENSIVE adversarial attack')
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
