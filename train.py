@@ -24,7 +24,7 @@ def arg_parse():
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
     parser.add_argument('--cfg', required=True, help='path to config file', type=str)
     parser.add_argument('--output', default='default', type=str)
-    parser.add_argument('--gpus', type=str)
+    parser.add_argument('--gpus', type=str, default='0')
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--seed', default=111, type=int)
     parser.add_argument('--probs', action='store_true')
