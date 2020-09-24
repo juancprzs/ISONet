@@ -55,10 +55,22 @@ class Trainer(object):
             self.epochs += 1
 
         # final evaluation on best model
+        self.eval_rob_best()
+
+    def eval_rob_best(self):
+        path = f'{self.output_dir}/best.pt'
+        print(f'Computing final rob. acc. Loading ckpt from {path}...', end=' ')
+        ckpt = torch.load(path)
+        self.model1.load_state_dict(ckpt['net1'])
+        self.model2.load_state_dict(ckpt['net2'])
+        print('done.')
         model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
         rob_acc, _ = self.get_rob_acc(model_forward, cheap=False, test=True)
-        print('Final robust accuracy: ', rob_acc)
-    
+        info_str = f'Final robust accuracy: {rob_acc}'
+        print(info_str)
+        self.logger.info(info_str)
+
+
     def train_epoch(self):
         self.model1.train()
         self.model2.train()
@@ -167,7 +179,8 @@ class Trainer(object):
             adversary.square.n_queries = 100
         else:
             cost = 'EXPENSIVE'
-        print(f'Running EXPENSIVE adversarial attack')
+        
+        print(f'Running {cost} adversarial attack')
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
