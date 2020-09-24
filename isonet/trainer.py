@@ -147,7 +147,7 @@ class Trainer(object):
         else:
             set_name = 'val'
             # robust accuracy
-            if acc > 0.75: # larger than 75% acc
+            if acc > 0.78: # larger than 78% acc
                 model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
                 rob_acc, _ = self.get_rob_acc(model_forward, cheap=True, test=test)
                 if 100. * rob_acc > self.best_rob_acc:
