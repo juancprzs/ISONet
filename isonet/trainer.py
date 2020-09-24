@@ -16,28 +16,28 @@ import pdb
 
 
 class Trainer(object):
-    def __init__(self, device, train_loader, val_loader, model1, model2, optim, 
-            logger, output_dir, eps=2./255., probs=False):
+    def __init__(self, train_loader, val_loader, test_loader, model1, model2, 
+            optim, logger, output_dir, eps=2./255., probs=False):
         # misc
-        self.device = device
+        self.device = torch.device('cuda')
         self.output_dir = output_dir
-        # data loader
+        # data loaders
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.test_loader = test_loader
         # nn setting
-        self.model1 = model1
-        self.model2 = model2
         self.optim = optim
+        self.model1, self.model2 = model1, model2
         # lr setting
         self.criterion = nn.CrossEntropyLoss()
         # training loop settings
         self.epochs = 1
         # loss settings
-        self.train_acc, self.val_acc = [], []
-        self.best_valid_acc = 0
-        self.best_rob_acc = 0
-        self.ce_loss, self.ce_loss1, self.ce_loss2 = 0, 0, 0
         self.disagreement = 0
+        self.best_rob_acc = 0
+        self.best_valid_acc = 0
+        self.ce_loss, self.ce_loss1, self.ce_loss2 = 0, 0, 0
+        self.train_acc, self.val_acc, self.test_acc = [], [], []
         # others
         self.ave_time = 0
         self.logger = logger
@@ -51,8 +51,14 @@ class Trainer(object):
             self.adjust_learning_rate()
             self.train_epoch()
             self.val()
+            self.val(test=True)
             self.epochs += 1
 
+        # final evaluation on best model
+        model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
+        rob_acc, _ = self.get_rob_acc(model_forward, cheap=False, test=True)
+        print('Final robust accuracy: ', rob_acc)
+    
     def train_epoch(self):
         self.model1.train()
         self.model2.train()
@@ -83,30 +89,31 @@ class Trainer(object):
 
             self.ave_time += time.time() - iter_t
             tprint(f'train Epoch: {self.epochs} | {batch_idx + 1} / {len(self.train_loader)} | '
-                   f'Acc: {100. * correct / total:.3f} | CE: {self.ce_loss / (batch_idx + 1):.3f} | '
-                   f'Acc1: {100. * correct1 / total:.3f} | CE1: {self.ce_loss1 / (batch_idx + 1):.3f} | '
-                   f'Acc2: {100. * correct2 / total:.3f} | CE2: {self.ce_loss2 / (batch_idx + 1):.3f} | '
-                   f'Disag: {self.disagreement / (batch_idx + 1):.3f} | '
-                   f'time: {self.ave_time / (batch_idx + 1):.3f}s')
+                   f'Acc: {100.*correct/total:.3f} | CE: {self.ce_loss/(batch_idx + 1):.3f} | '
+                   f'Acc1: {100.*correct1/total:.3f} | CE1: {self.ce_loss1/(batch_idx + 1):.3f} | '
+                   f'Acc2: {100.*correct2/total:.3f} | CE2: {self.ce_loss2/(batch_idx + 1):.3f} | '
+                   f'Disag: {self.disagreement/(batch_idx + 1):.3f} | '
+                   f'time: {self.ave_time/(batch_idx + 1):.3f}s')
 
         info_str = f'train Epoch: {self.epochs} | ' \
-                   f'Acc: {100. * correct / total:.3f} | CE: {self.ce_loss / (batch_idx + 1):.3f} | ' \
-                   f'Acc1: {100. * correct1 / total:.3f} | CE1: {self.ce_loss1 / (batch_idx + 1):.3f} | ' \
-                   f'Acc2: {100. * correct2 / total:.3f} | CE2: {self.ce_loss2 / (batch_idx + 1):.3f} | ' \
-                   f'Disag: {self.disagreement / (batch_idx + 1):.3f} | ' \
+                   f'Acc: {100.*correct/total:.3f} | CE: {self.ce_loss/(batch_idx + 1):.3f} | ' \
+                   f'Acc1: {100.*correct1/total:.3f} | CE1: {self.ce_loss1/(batch_idx + 1):.3f} | ' \
+                   f'Acc2: {100.*correct2/total:.3f} | CE2: {self.ce_loss2/(batch_idx + 1):.3f} | ' \
+                   f'Disag: {self.disagreement/(batch_idx + 1):.3f} | ' \
                    f'time: {time.time() - epoch_t:.2f}s |'
         self.logger.info(info_str)
         pprint_without_newline(info_str)
         self.train_acc.append(100. * correct / total)
 
-    def val(self):
+    def val(self, test=False):
+        loader = self.test_loader if test else self.val_loader
         self.model1.eval()
         self.model2.eval()
         self.ce_loss, self.ce_loss1, self.ce_loss2, self.disagreement = 0, 0, 0, 0
         correct, correct1, correct2 = 0, 0, 0
         total = 0
         with torch.no_grad():
-            for batch_idx, (inputs, targets) in enumerate(self.val_loader):
+            for _, (inputs, targets) in enumerate(loader):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 outputs1, outputs2 = self.model1(inputs), self.model2(inputs)
                 loss = self.loss(outputs1, outputs2, targets)
@@ -122,34 +129,35 @@ class Trainer(object):
 
         # self.snapshot(None) # save ALL snapshots
         acc = correct / total
-        self.best_valid_acc = max(self.best_valid_acc, 100. * acc)
-        # robust accuracy
-        if acc > 0.90: # larger than 90% acc
+        if test:
+            set_name = 'test'
+            rob_acc = -1.
+        else:
+            set_name = 'val'
+            self.best_valid_acc = max(self.best_valid_acc, 100. * acc)
+            # robust accuracy
             model_forward = lambda x: (self.model1(x) + self.model2(x)) / 2.
-            rob_acc, nat_acc = self.get_rob_acc(model_forward, cheap=True)
-            assert nat_acc == acc
+            rob_acc, _ = self.get_rob_acc(model_forward, cheap=True, test=test)
             if 100. * rob_acc > self.best_rob_acc:
                 self.snapshot('best')
                 self.best_rob_acc = 100. * rob_acc
-        else:
-            rob_acc = 0.0
-            if 100. * acc > self.best_valid_acc:
-                self.snapshot('best')
-                self.best_valid_acc = 100. * acc
 
-        info_str = f'valid | ' \
-                   f'Acc: {100. * correct / total:.3f} | CE: {self.ce_loss / len(self.val_loader):.3f} | ' \
-                   f'Acc1: {100. * correct1 / total:.3f} | CE: {self.ce_loss1 / len(self.val_loader):.3f} | ' \
-                   f'Acc2: {100. * correct2 / total:.3f} | CE: {self.ce_loss2 / len(self.val_loader):.3f} | ' \
-                   f'Disag: {self.disagreement / len(self.val_loader):.3f} | ' \
-                   f'best: {self.best_valid_acc:.3f} | ' \
-                   f'best_r: {self.best_rob_acc:.3f} | ' \
-                   f'Rob. acc: {100. * rob_acc:.3f} | '
+        info_str = f'{set_name} | ' \
+                   f'Acc: {100.*correct/total:.3f} | CE: {self.ce_loss/len(loader):.3f} | ' \
+                   f'Acc1: {100.*correct1/total:.3f} | CE: {self.ce_loss1/len(loader):.3f} | ' \
+                   f'Acc2: {100.*correct2/total:.3f} | CE: {self.ce_loss2/len(loader):.3f} | ' \
+                   f'Disag: {self.disagreement/len(loader):.3f} | ' \
+                   f'best valid: {self.best_valid_acc:.3f} | ' \
+                   f'best_r valid: {self.best_rob_acc:.3f} | ' \
+                   f'Rob. acc: {100.*rob_acc:.3f} | '
         print(info_str)
         self.logger.info(info_str)
-        self.val_acc.append(100. * correct / total)
+        if test:
+            self.test_acc.append(100.*correct/total)
+        else:
+            self.val_acc.append(100.*correct/total)
 
-    def get_rob_acc(self, model_forward, cheap=False):
+    def get_rob_acc(self, model_forward, cheap=False, test=False):
         adversary = AutoAttack(model_forward, norm='Linf', 
             eps=2./255., verbose=False)
         if cheap: # compare to https://github.com/fra31/auto-attack/blob/master/autoattack/autoattack.py#L230
@@ -161,7 +169,7 @@ class Trainer(object):
         # run actual attack
         correct, adv_correct, total = 0, 0, 0
         with torch.no_grad():
-            pbar = tqdm(self.val_loader)
+            pbar = tqdm(self.test_loader if test else self.val_loader)
             for idx, (X, y) in enumerate(pbar):
                 X, y = X.to(self.device), y.to(self.device)
                 total += y.size(0)

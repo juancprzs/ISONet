@@ -77,7 +77,7 @@ def main():
     logger.info('Using {} GPUs'.format(num_gpus))
     logger.info(C.dump())
     # ---- setup dataset ----
-    train_loader, val_loader = du.construct_dataset()
+    train_loader, val_loader, test_loader = du.construct_dataset()
 
     # net1
     net1 = mobilenet_v2(num_classes=10) if args.mobilenet else ResNet18()
@@ -94,12 +94,16 @@ def main():
     )
     net2 = ModelWrapper(net2)
 
+    # print tainable parameters
+    trainable_ps = sum(p.numel() for p in net1.parameters() if p.requires_grad)
+    print(f'Trainable parameters in each model: {trainable_ps}')
+
     optim = ou.construct_optim(net1, net2, num_gpus)
 
     trainer = Trainer(
-        torch.device('cuda'),
         train_loader,
         val_loader,
+        test_loader,
         net1,
         net2,
         optim,
